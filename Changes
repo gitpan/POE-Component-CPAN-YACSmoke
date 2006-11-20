@@ -1,5 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.02	Mon Nov 20 13:28:06 GMT 2006
+	- Added 'recent', updated synopsis and examples/.
+	- Added a new test for 'recent'.
+
 0.01	Sat Nov 18 13:30:01 GMT 2006
 	- Initial public release.

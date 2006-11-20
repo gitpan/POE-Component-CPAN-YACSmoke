@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 sub spawn {
   my $package = shift;
@@ -18,6 +18,7 @@ sub spawn {
 		      submit    => '_command',
 		      push      => '_command',
 		      unshift   => '_command',
+		      recent    => '_command',
 	   },
 	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
 	],
@@ -79,7 +80,7 @@ sub _command {
   my $ref = $kernel->alias_resolve( $args->{session} ) || $sender;
   $args->{session} = $ref->ID();
 
-  unless ( $args->{module} ) {
+  if ( !$args->{module} and $state ne 'recent' ) {
 	warn "No 'module' specified for $state";
 	return;
   }
@@ -89,19 +90,33 @@ sub _command {
 	return;
   }
 
-  if ( $^O eq 'MSWin32' ) {
-	$args->{program} = \&_test_module;
-	$args->{program_args} = [ $args->{module} ];
+  if ( $state eq 'recent' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_recent_modules;
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	my $code = 'my $smoke = CPAN::YACSmoke->new(); print "$_\n" for $smoke->{plugin}->download_list();';
+	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code ];
+    }
   }
   else {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_test_module;
+	$args->{program_args} = [ $args->{module} ];
+    }
+    else {
 	my $perl = $args->{perl} || $^X;
 	my $code = 'my $module = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->test($module);';
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, $args->{module} ];
+    }
   }
 
   $kernel->refcount_increment( $args->{session}, __PACKAGE__ );
 
-  if ( $state eq 'unshift' ) {
+  $args->{cmd} = $state;
+
+  if ( $state eq 'unshift' or $state eq 'recent' ) {
     unshift @{ $self->{job_queue} }, $args;
   }
   else {
@@ -120,7 +135,14 @@ sub _sig_child {
   $kernel->delay( '_wheel_idle' );
   my $job = delete $self->{_current_job};
   $job->{status} = $status;
-  $job->{log} = delete $self->{_wheel_log};
+  my $log = delete $self->{_wheel_log};
+  if ( $job->{cmd} eq 'recent' ) {
+    pop @{ $log };
+    $job->{recent} = $log;
+  }
+  else {
+    $job->{log} = $log;
+  }
   $job->{end_time} = time();
   unless ( $self->{debug} ) {
     delete $job->{program}; 
@@ -183,7 +205,7 @@ sub _wheel_stdout {
 sub _wheel_stderr {
   my ($self, $input, $wheel_id) = @_[OBJECT, ARG0, ARG1];
   $self->{_wheel_time} = time();
-  push @{ $self->{_wheel_log} }, $input;
+  push @{ $self->{_wheel_log} }, $input unless $self->{_current_job}->{cmd} eq 'recent';
   warn $input, "\n" if $self->{debug};
   undef;
 }
@@ -213,6 +235,17 @@ sub _test_module {
   return;
 }
 
+sub _recent_modules {
+  eval "require CPAN::YACSmoke;";
+  if ($@) {
+	warn "$@";
+	return;
+  }
+  my $smoke = CPAN::YACSmoke->new();
+  print "$_\n" for $smoke->{plugin}->download_list();
+  return;
+}
+
 1;
 __END__
 
@@ -221,7 +254,6 @@ __END__
 POE::Component::CPAN::YACSmoke - bringing the power of POE to CPAN smoke testing.
 
 =head1 SYNOPSIS
-
 
   use strict;
   use POE qw(Component::CPAN::YACSmoke);
@@ -247,7 +279,7 @@ POE::Component::CPAN::YACSmoke - bringing the power of POE to CPAN smoke testing
   
   POE::Session->create(
   	package_states => [
-  	   'main' => [ qw(_start _stop _results) ],
+  	   'main' => [ qw(_start _stop _results _recent) ],
   	],
   	heap => { perl => $perl, pending => \@pending },
   );
@@ -257,8 +289,13 @@ POE::Component::CPAN::YACSmoke - bringing the power of POE to CPAN smoke testing
   
   sub _start {
     my ($kernel,$heap) = @_[KERNEL,HEAP];
-    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } ) 
+    if ( @{ $heap->{pending} } ) {
+      $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } ) 
   	for @{ $heap->{pending} };
+    }
+    else {
+      $kernel->post( 'smoker', 'recent', { event => '_recent', perl => $heap->{perl} } ) 
+    }
     undef;
   }
   
@@ -273,6 +310,14 @@ POE::Component::CPAN::YACSmoke - bringing the power of POE to CPAN smoke testing
     print STDOUT "$_\n" for @{ $job->{log} };
     undef;
   }
+
+  sub _recent {
+    my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
+    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } )
+        for @{ $job->{recent} };
+    undef;
+  }
+
   
 =head1 DESCRIPTION
 
@@ -355,6 +400,19 @@ Inserts the requested job at the head of the queue ( if there is one ). Guarante
 
 Terminates the component. Any pending jobs are cancelled and the currently running job is allowed to complete gracefully. Requires no additional parameters.
 
+=item recent
+
+Obtain a list of recent uploads to CPAN.
+
+Takes one parameter, hashref with the following keys defined:
+
+  'event', an event name for the results to be sent to (Mandatory);
+  'session', which session the result event should go to (Default is the sender);
+  'perl', which perl executable to use (Default whatever is in $^X);
+
+It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
+possible future API clashes.
+
 =back
 
 =head1 OUTPUT EVENTS
@@ -367,6 +425,10 @@ Resultant events will have a hashref as ARG0. All the keys passed in as part of 
   'status', the $? of the process;
   'start_time', the time in epoch seconds when the job started running;
   'end_time', the time in epoch seconds when the job finished;
+
+The results of a 'recent' request will be same as above apart from an additional key:
+
+  'recent', an arrayref of recently uploaded modules;
 
 =head1 MSWin32
 

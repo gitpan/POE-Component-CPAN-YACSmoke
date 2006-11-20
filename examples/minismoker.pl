@@ -22,7 +22,7 @@ my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => 0
 
 POE::Session->create(
 	package_states => [
-	   'main' => [ qw(_start _stop _results) ],
+	   'main' => [ qw(_start _stop _results _recent) ],
 	],
 	heap => { perl => $perl, pending => \@pending },
 );
@@ -32,8 +32,13 @@ exit 0;
 
 sub _start {
   my ($kernel,$heap) = @_[KERNEL,HEAP];
-  $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } ) 
+  if ( @{ $heap->{pending} } ) {
+    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } ) 
 	for @{ $heap->{pending} };
+  } 
+  else {
+    $kernel->post( 'smoker', 'recent', { event => '_recent', perl => $heap->{perl} } );
+  }
   undef;
 }
 
@@ -46,6 +51,13 @@ sub _results {
   my $job = $_[ARG0];
   print STDOUT "Module: ", $job->{module}, "\n";
   print STDOUT "$_\n" for @{ $job->{log} };
+  undef;
+}
+
+sub _recent {
+  my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
+  $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } )
+	for @{ $job->{recent} };
   undef;
 }
 
@@ -64,7 +76,7 @@ minismoker.pl - Example script for POE::Component::CPAN::YACSmoke
 minismoker.pl is an example script for L<POE::Component::CPAN::YACSmoke>, a L<POE> based component
 that provides L<CPAN::YACSmoke> services to other components and sessions.
 
-It spits on the results of each smoke to STDOUT.
+It spits out the results of each smoke to STDOUT.
 
 =head1 SWITCHES
 
@@ -81,6 +93,9 @@ Specify a file with modules to be smoked, eg.
 
   C/CH/CHROMATIC/Acme-Incorporated-1.00.tar.gz
   B/BI/BINGOS/POE-Component-IRC-5.12.tar.gz
+
+If a job file is not provided the script obtains a list of recently uploaded modules and processes
+them.
 
 =back
 
