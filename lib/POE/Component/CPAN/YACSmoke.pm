@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 sub spawn {
   my $package = shift;
@@ -148,6 +148,7 @@ sub _sig_child {
     delete $job->{program}; 
     delete $job->{program_args};
   }
+  $self->{debug} = delete $job->{global_debug};
   $kernel->post( $job->{session}, $job->{event}, $job );
   $kernel->refcount_decrement( $job->{session}, __PACKAGE__ );
   $kernel->yield( '_spawn_wheel' );
@@ -172,6 +173,10 @@ sub _spawn_wheel {
 	warn "Couldn\'t spawn a wheel for $job->{module}\n";
 	$kernel->refcount_decrement( $job->{session}, __PACKAGE__ );
 	return;
+  }
+  if ( defined $job->{debug} ) {
+	$job->{global_debug} = delete $self->{debug};
+	$self->{debug} = $job->{debug};
   }
   $self->{_wheel_log} = [ ];
   $self->{_current_job} = $job;
@@ -380,6 +385,7 @@ All the events that the component will accept (unless noted otherwise ) require 
 	    so whatever that requires should work (Mandatory);
   'session', which session the result event should go to (Default is the sender);
   'perl', which perl executable to use (Default whatever is in $^X);
+  'debug', turn on or off debugging information for this particular job;
 
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.

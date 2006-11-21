@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.04	Tue Nov 21 10:46:45 GMT 2006
+	- debug can be switched on and off on a job by job basis.
+
 0.03	Tue Nov 21 08:53:06 GMT 2006
 	- Removed prereq 'CPAN::YACSmoke', the poco doesn't actually
 	require it.

@@ -17,5 +17,6 @@ README
 t/00_use.t
 t/01_smoking.t
 t/02_recent.t
+t/03_debug.t
 t/99_pod.t
 t/99_pod_coverage.t
