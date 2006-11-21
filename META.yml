@@ -8,6 +8,5 @@ no_index:
     - inc
     - t
 requires: 
-  CPAN::YACSmoke: 0.03
   POE: 0.38
-version: 0.02
+version: 0.03
