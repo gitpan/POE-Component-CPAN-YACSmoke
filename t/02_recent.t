@@ -1,6 +1,16 @@
-use Test::More tests => 9;
-BEGIN { use_ok('POE::Component::CPAN::YACSmoke') };
+use Test::More;
 use POE;
+
+if ( $^O eq 'MSWin32' ) {
+   eval "require CPAN::YACSmoke";
+   unless ($@) {
+        plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
+   }
+}
+
+plan tests => 9;
+
+require_ok('POE::Component::CPAN::YACSmoke');
 
 my $perl = '/COMPLETELY/MADE/UP/PATH/TO/PERL';
 

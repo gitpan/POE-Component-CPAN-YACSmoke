@@ -1,6 +1,16 @@
-use Test::More tests => 10;
-BEGIN { use_ok('POE::Component::CPAN::YACSmoke') };
+use Test::More;
 use POE;
+
+if ( $^O eq 'MSWin32' ) {
+   eval "require CPAN::YACSmoke";
+   unless ($@) {
+	plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
+   }
+}
+
+plan tests => 10;
+
+require_ok('POE::Component::CPAN::YACSmoke');
 
 my $perl = '/COMPLETELY/MADE/UP/PATH/TO/PERL';
 my $module = 'F/FU/FUBAR/Fubar-1.00.tar.gz';

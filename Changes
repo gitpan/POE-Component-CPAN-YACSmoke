@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.05 	Wed Nov 22 17:26:05 GMT 2006
+	- Fixed tests on MSWin32 with CPAN::YACSmoke already installed.
+
 0.04	Tue Nov 21 10:46:45 GMT 2006
 	- debug can be switched on and off on a job by job basis.
 
