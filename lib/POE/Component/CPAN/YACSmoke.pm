@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 sub spawn {
   my $package = shift;
@@ -220,7 +220,7 @@ sub _wheel_idle {
   if ( time() - $self->{_wheel_time} >= $self->{idle} ) {
     push @{ $self->{_wheel_log} }, "Killing current run due to excessive idle";
     warn "Killing current run due to excessive idle\n" if $self->{debug};
-    $self->{wheel}->kill() if $self->{wheel};
+    $self->{wheel}->kill(9) if $self->{wheel};
   } else {
     $kernel->delay( '_wheel_idle', 60 );
   }

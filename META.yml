@@ -9,4 +9,4 @@ no_index:
     - t
 requires: 
   POE: 0.38
-version: 0.05
+version: 0.06

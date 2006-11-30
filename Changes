@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.06	Thu Nov 30 15:37:46 GMT 2006
+	- Changed the wheel kill to send KILL instead of TERM. 
+
 0.05 	Wed Nov 22 17:26:05 GMT 2006
 	- Fixed tests on MSWin32 with CPAN::YACSmoke already installed.
 
