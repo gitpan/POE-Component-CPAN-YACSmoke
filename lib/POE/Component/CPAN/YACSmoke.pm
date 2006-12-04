@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 sub spawn {
   my $package = shift;
@@ -19,6 +19,7 @@ sub spawn {
 		      push      => '_command',
 		      unshift   => '_command',
 		      recent    => '_command',
+		      check     => '_command',
 	   },
 	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
 	],
@@ -80,7 +81,7 @@ sub _command {
   my $ref = $kernel->alias_resolve( $args->{session} ) || $sender;
   $args->{session} = $ref->ID();
 
-  if ( !$args->{module} and $state ne 'recent' ) {
+  if ( !$args->{module} and $state !~ /^(recent|check)$/i ) {
 	warn "No 'module' specified for $state";
 	return;
   }
@@ -99,6 +100,16 @@ sub _command {
 	my $code = 'my $smoke = CPAN::YACSmoke->new(); print "$_\n" for $smoke->{plugin}->download_list();';
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code ];
     }
+  }
+  elsif ( $state eq 'check' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_check_yacsmoke;
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', 1 ];
+    }
+    $args->{debug} = 1;
   }
   else {
     if ( $^O eq 'MSWin32' ) {
@@ -227,6 +238,14 @@ sub _wheel_idle {
   undef;
 }
 
+sub _check_yacsmoke {
+  eval "require CPAN::YACSmoke;";
+  if ($@) {
+	warn "$@";
+	return;
+  }
+  return 0;
+}
 
 sub _test_module {
   eval "require CPAN::YACSmoke;";
@@ -419,6 +438,18 @@ Takes one parameter, hashref with the following keys defined:
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.
 
+=item check
+
+Checks whether L<CPAN::YACSmoke> is installed. Takes one parameter a hashref with the following keys 
+defined:
+
+  'event', an event name for the results to be sent to (Mandatory);
+  'session', which session the result event should go to (Default is the sender);
+  'perl', which perl executable to use (Default whatever is in $^X);
+
+It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
+possible future API clashes.
+  
 =back
 
 =head1 OUTPUT EVENTS

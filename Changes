@@ -1,6 +1,12 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.07	Mon Dec 04 10:51:47 GMT 2006
+	- Added 'check' which does a simple test for CPAN::YACSmoke
+	  in the perl that we have been asked to run;
+	- Amended minismoker.pl to use 'check' and carp and finish if
+	  no CPAN::YACSmoke is available, suggested by Ricardo SIGNES;
+
 0.06	Thu Nov 30 15:37:46 GMT 2006
 	- Changed the wheel kill to send KILL instead of TERM. 
 

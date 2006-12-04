@@ -22,7 +22,7 @@ my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => 0
 
 POE::Session->create(
 	package_states => [
-	   'main' => [ qw(_start _stop _results _recent) ],
+	   'main' => [ qw(_start _start_smoking _stop _results _recent _check) ],
 	],
 	heap => { perl => $perl, pending => \@pending },
 );
@@ -31,6 +31,23 @@ $poe_kernel->run();
 exit 0;
 
 sub _start {
+  my ($kernel,$heap) = @_[KERNEL,HEAP];
+  $kernel->post( 'smoker', 'check', { event => '_check', perl => $heap->{perl} } );
+  undef;
+}
+
+sub _check {
+  my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
+  unless ( $job->{status} == 0 ) {
+     my $perl = $heap->{perl} || $^X;
+     warn "$perl doesn't have CPAN::YACSmoke installed. Aborting\n";
+     return;
+  }
+  $kernel->yield('_start_smoking');
+  undef;
+}
+
+sub _start_smoking {
   my ($kernel,$heap) = @_[KERNEL,HEAP];
   if ( @{ $heap->{pending} } ) {
     $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_ } ) 
