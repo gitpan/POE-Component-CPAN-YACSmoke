@@ -4,4 +4,6 @@ author 'Chris Williams <chris@bingosnet.co.uk>';
 license 'perl';
 version_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 requires 'POE' => 0.38;
+requires 'File::Spec' => 0;
+requires 'Win32::Process' => 0 if $^O eq 'MSWin32';
 WriteAll();

@@ -1,12 +1,12 @@
 use Test::More;
 use POE;
 
-if ( $^O eq 'MSWin32' ) {
-   eval "require CPAN::YACSmoke";
-   unless ($@) {
-        plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
-   }
-}
+#if ( $^O eq 'MSWin32' ) {
+#   eval "require CPAN::YACSmoke";
+#   unless ($@) {
+#        plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
+#   }
+#}
 
 plan tests => 10;
 

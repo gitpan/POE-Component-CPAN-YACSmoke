@@ -4,13 +4,24 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.07';
+$VERSION = '0.08';
+
+sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
+sub INFINITE () { 0xFFFFFFFF }
 
 sub spawn {
   my $package = shift;
   my %opts = @_;
   $opts{lc $_} = delete $opts{$_} for keys %opts;
   my $options = delete $opts{options};
+
+  if ( $^O eq 'MSWin32' ) {
+    eval    { require Win32; };
+    if ($@) { die "Win32 but failed to load:\n$@" }
+    eval    { require Win32::Process; };
+    if ($@) { die "Win32::Process but failed to load:\n$@" }
+  }
+
   my $self = bless \%opts, $package;
   $self->{session_id} = POE::Session->create(
 	object_states => [
@@ -94,6 +105,7 @@ sub _command {
   if ( $state eq 'recent' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_recent_modules;
+	$args->{program_args} = [ $args->{perl} || $^X ];
     }
     else {
 	my $perl = $args->{perl} || $^X;
@@ -104,6 +116,7 @@ sub _command {
   elsif ( $state eq 'check' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_check_yacsmoke;
+	$args->{program_args} = [ $args->{perl} || $^X ];
     }
     else {
 	my $perl = $args->{perl} || $^X;
@@ -114,7 +127,7 @@ sub _command {
   else {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_test_module;
-	$args->{program_args} = [ $args->{module} ];
+	$args->{program_args} = [ $args->{perl} || $^X, $args->{module} ];
     }
     else {
 	my $perl = $args->{perl} || $^X;
@@ -221,6 +234,11 @@ sub _wheel_stdout {
 sub _wheel_stderr {
   my ($self, $input, $wheel_id) = @_[OBJECT, ARG0, ARG1];
   $self->{_wheel_time} = time();
+  if ( $^O eq 'MSWin32' and !$self->{_current_job}->{GRP_PID} and my ($pid) = $input =~ /(\d+)/ ) {
+     $self->{_current_job}->{GRP_PID} = $pid;
+     warn "Grp PID: $pid\n" if $self->{debug};
+     return;
+  }
   push @{ $self->{_wheel_log} }, $input unless $self->{_current_job}->{cmd} eq 'recent';
   warn $input, "\n" if $self->{debug};
   undef;
@@ -231,43 +249,61 @@ sub _wheel_idle {
   if ( time() - $self->{_wheel_time} >= $self->{idle} ) {
     push @{ $self->{_wheel_log} }, "Killing current run due to excessive idle";
     warn "Killing current run due to excessive idle\n" if $self->{debug};
-    $self->{wheel}->kill(9) if $self->{wheel};
-  } else {
+    if ( $^O eq 'MSWin32' and $self->{wheel} ) {
+	my $grp_pid = $self->{_current_job}->{GRP_PID};
+	return unless $grp_pid;
+	unless( Win32::Process::KillProcess( $grp_pid, 0 ) ) {
+	   warn Win32::FormatMessage( Win32::GetLastError() );
+	}
+    }
+    else {
+      $self->{wheel}->kill(9) if $self->{wheel};
+    }
+  } 
+  else {
     $kernel->delay( '_wheel_idle', 60 );
   }
-  undef;
+  return;
 }
 
 sub _check_yacsmoke {
-  eval "require CPAN::YACSmoke;";
-  if ($@) {
-	warn "$@";
-	return;
-  }
-  return 0;
+  my $perl = shift;
+  my $cmdline = $perl . q{ -MCPAN::YACSmoke -e 1};
+  my $proc;
+  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $proc->GetProcessID(), "\n";
+  $proc->Wait(INFINITE);
+  my $exitcode;
+  $proc->GetExitCode( $exitcode );
+  exit( $exitcode );
 }
 
 sub _test_module {
-  eval "require CPAN::YACSmoke;";
-  if ($@) {
-	warn "$@";
-	return;
-  }
+  my $perl = shift;
   my $module = shift;
-  my $smoke = CPAN::YACSmoke->new();
-  $smoke->test($module);
-  return;
+  my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $module = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->test($module);" ' . $module;
+  my $proc;
+  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $proc->GetProcessID(), "\n";
+  $proc->Wait(INFINITE);
+  my $exitcode;
+  $proc->GetExitCode( $exitcode );
+  exit( $exitcode );
 }
 
 sub _recent_modules {
-  eval "require CPAN::YACSmoke;";
-  if ($@) {
-	warn "$@";
-	return;
-  }
-  my $smoke = CPAN::YACSmoke->new();
-  print "$_\n" for $smoke->{plugin}->download_list();
-  return;
+  my $perl = shift;
+  my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $smoke = CPAN::YACSmoke->new();print qq{$_\n} for $smoke->{plugin}->download_list();"';
+  my $proc;
+  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $proc->GetProcessID(), "\n";
+  $proc->Wait(INFINITE);
+  my $exitcode;
+  $proc->GetExitCode( $exitcode );
+  exit( $exitcode );
 }
 
 1;
@@ -469,11 +505,10 @@ The results of a 'recent' request will be same as above apart from an additional
 
 =head1 MSWin32
 
-On MSWin32 the technique used by this component to fork does not work properly. This may
-be a limitation of L<POE::Wheel::Run>. I am investigating.
+POE::Component::CPAN::YACSmoke not supports MSWin32 in the same manner as other platforms. L<Win32::Process> is
+used to fix the issues surrounding L<POE::Wheel::Run> and forking alternative copies of the perl executable.
 
-A knock-on consequence of this, is that modules submitted will be smoked with a fork of the currently
-running process and hence 'perl'. Bear this is mind when setting up your smoking environment.
+The code is still experimental though. Be warned.
 
 =head1 AUTHOR
 

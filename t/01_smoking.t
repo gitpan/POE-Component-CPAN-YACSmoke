@@ -1,18 +1,22 @@
 use Test::More;
+use File::Spec;
 use POE;
 
-if ( $^O eq 'MSWin32' ) {
-   eval "require CPAN::YACSmoke";
-   unless ($@) {
-	plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
-   }
-}
+#if ( $^O eq 'MSWin32' ) {
+#   eval "require CPAN::YACSmoke";
+#   unless ($@) {
+#	plan skip_all => "MSWin32 and CPAN::YACSmoke detected";
+#   }
+#}
 
 plan tests => 10;
 
 require_ok('POE::Component::CPAN::YACSmoke');
 
-my $perl = '/COMPLETELY/MADE/UP/PATH/TO/PERL';
+my @path = qw(COMPLETELY MADE UP PATH TO PERL);
+unshift @path, 'C:' if $^O eq 'MSWin32';
+my $perl = File::Spec->catfile( @path );
+
 my $module = 'F/FU/FUBAR/Fubar-1.00.tar.gz';
 
 my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => 0, options => { trace => 0 } );
