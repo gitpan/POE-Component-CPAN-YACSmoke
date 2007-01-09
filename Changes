@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.09	Tue Jan 09 16:27:04 GMT 2006
+	- dngor spotted a typo in the MSWin32 documentation that 
+	  changed the whole meaning of the sentence. Fixed.
+
 0.08	Sun Jan 07 16:47:31 GMT 2006
 	- A lot of hackery with Win32::Process to make this sucker 
 	  work properly on MSWin32. 

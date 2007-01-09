@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.08';
+$VERSION = '0.09';
 
 sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
 sub INFINITE () { 0xFFFFFFFF }
@@ -505,7 +505,7 @@ The results of a 'recent' request will be same as above apart from an additional
 
 =head1 MSWin32
 
-POE::Component::CPAN::YACSmoke not supports MSWin32 in the same manner as other platforms. L<Win32::Process> is
+POE::Component::CPAN::YACSmoke now supports MSWin32 in the same manner as other platforms. L<Win32::Process> is
 used to fix the issues surrounding L<POE::Wheel::Run> and forking alternative copies of the perl executable.
 
 The code is still experimental though. Be warned.
