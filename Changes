@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.10	Tue Jan 16 14:34:09 GMT 2006
+	- Fixed the issues with recent on MSWin32.
+
 0.09	Tue Jan 09 16:27:04 GMT 2006
 	- dngor spotted a typo in the MSWin32 documentation that 
 	  changed the whole meaning of the sentence. Fixed.

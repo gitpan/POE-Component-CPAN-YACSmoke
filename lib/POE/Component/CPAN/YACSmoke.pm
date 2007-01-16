@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
 sub INFINITE () { 0xFFFFFFFF }
@@ -162,6 +162,7 @@ sub _sig_child {
   my $log = delete $self->{_wheel_log};
   if ( $job->{cmd} eq 'recent' ) {
     pop @{ $log };
+    s/\x0D$// for @{ $log };
     $job->{recent} = $log;
   }
   else {
