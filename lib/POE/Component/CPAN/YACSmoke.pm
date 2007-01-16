@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
 sub INFINITE () { 0xFFFFFFFF }
@@ -526,6 +526,8 @@ about bugs >:)
 And to Robert Rothenberg and Barbie for L<CPAN::YACSmoke>.
 
 =head1 SEE ALSO
+
+L<minismoker>
 
 L<POE>
 
