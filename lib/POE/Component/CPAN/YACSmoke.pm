@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.11';
+$VERSION = '0.12';
 
 sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
 sub INFINITE () { 0xFFFFFFFF }

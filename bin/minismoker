@@ -5,10 +5,12 @@ use Getopt::Long;
 
 $|=1;
 
-my ($perl, $jobs);
+my ($perl, $jobs, $appdata);
 my $debug = 0;
 
-GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug );
+GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata );
+
+$ENV{APPDATA} = $appdata if $appdata;
 
 my @pending;
 if ( $jobs ) {
@@ -120,6 +122,11 @@ them.
 =item --debug 
 
 Spews out whatever is happening in the component as it happens.
+
+=item --appdata
+
+Specify a path to where L<CPANPLUS> can find your .cpanplus folder. This sets the APPDATA environment
+variable.
 
 =back
 
