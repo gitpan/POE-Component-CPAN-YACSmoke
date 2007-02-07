@@ -6,5 +6,6 @@ version_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 requires 'POE' => 0.38;
 requires 'File::Spec' => 0;
 requires 'Win32::Process' => 0 if $^O eq 'MSWin32';
+requires 'Win32::Job' => 0 if $^O eq 'MSWin32';
 install_script 'bin/minismoker';
 WriteAll();

@@ -4,10 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.12';
-
-sub CREATE_NEW_PROCESS_GROUP () { 0x00000200 }
-sub INFINITE () { 0xFFFFFFFF }
+$VERSION = '0.13';
 
 sub spawn {
   my $package = shift;
@@ -18,6 +15,8 @@ sub spawn {
   if ( $^O eq 'MSWin32' ) {
     eval    { require Win32; };
     if ($@) { die "Win32 but failed to load:\n$@" }
+    eval    { require Win32::Job; };
+    if ($@) { die "Win32::Job but failed to load:\n$@" }
     eval    { require Win32::Process; };
     if ($@) { die "Win32::Process but failed to load:\n$@" }
   }
@@ -270,41 +269,41 @@ sub _wheel_idle {
 sub _check_yacsmoke {
   my $perl = shift;
   my $cmdline = $perl . q{ -MCPAN::YACSmoke -e 1};
-  my $proc;
-  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+  my $job = Win32::Job->new()
     or die Win32::FormatMessage( Win32::GetLastError() );
-  warn $proc->GetProcessID(), "\n";
-  $proc->Wait(INFINITE);
-  my $exitcode;
-  $proc->GetExitCode( $exitcode );
-  exit( $exitcode );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
 }
 
 sub _test_module {
   my $perl = shift;
   my $module = shift;
   my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $module = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->test($module);" ' . $module;
-  my $proc;
-  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+  my $job = Win32::Job->new()
     or die Win32::FormatMessage( Win32::GetLastError() );
-  warn $proc->GetProcessID(), "\n";
-  $proc->Wait(INFINITE);
-  my $exitcode;
-  $proc->GetExitCode( $exitcode );
-  exit( $exitcode );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
 }
 
 sub _recent_modules {
   my $perl = shift;
   my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $smoke = CPAN::YACSmoke->new();print qq{$_\n} for $smoke->{plugin}->download_list();"';
-  my $proc;
-  Win32::Process::Create( $proc, $perl, $cmdline, 1, CREATE_NEW_PROCESS_GROUP, "." )
+  my $job = Win32::Job->new()
     or die Win32::FormatMessage( Win32::GetLastError() );
-  warn $proc->GetProcessID(), "\n";
-  $proc->Wait(INFINITE);
-  my $exitcode;
-  $proc->GetExitCode( $exitcode );
-  exit( $exitcode );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
 }
 
 1;
