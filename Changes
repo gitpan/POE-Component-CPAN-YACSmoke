@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.14	Tue Feb 20 09:46:07 GMT 2007
+	- Added kwalitee test
+
 0.13	Wed Feb 07 15:01:34 GMT 2007
 	- Date fixes in Changes file.
 	- MSWin32 switched to using Win32::Job as per
