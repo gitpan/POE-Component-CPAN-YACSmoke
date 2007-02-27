@@ -5,10 +5,10 @@ use Getopt::Long;
 
 $|=1;
 
-my ($perl, $jobs, $appdata);
+my ($perl, $jobs, $appdata, $indices);
 my $debug = 0;
 
-GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata );
+GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices );
 
 $ENV{APPDATA} = $appdata if $appdata;
 
@@ -26,9 +26,9 @@ my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => $
 
 POE::Session->create(
 	package_states => [
-	   'main' => [ qw(_start _start_smoking _stop _results _recent _check) ],
+	   'main' => [ qw(_start _start_smoking _stop _results _recent _check _indices) ],
 	],
-	heap => { perl => $perl, pending => \@pending },
+	heap => { perl => $perl, pending => \@pending, indices => $indices },
 );
 
 $poe_kernel->run();
@@ -47,8 +47,17 @@ sub _check {
      warn "$perl doesn't have CPAN::YACSmoke installed. Aborting\n";
      return;
   }
+  if ( $heap->{indices} ) {
+    $kernel->post( 'smoker', 'indices', { event => '_indices', perl => $heap->{perl}, debug => $debug } );
+    return;
+  }
   $kernel->yield('_start_smoking');
   undef;
+}
+
+sub _indices {
+  $poe_kernel->yield('_start_smoking');
+  return;
 }
 
 sub _start_smoking {
@@ -127,6 +136,10 @@ Spews out whatever is happening in the component as it happens.
 
 Specify a path to where L<CPANPLUS> can find your .cpanplus folder. This sets the APPDATA environment
 variable.
+
+=item indices
+
+Specify if the L<CPANPLUS> should reload its indices before proceeding with the smoke.
 
 =back
 

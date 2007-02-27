@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 sub spawn {
   my $package = shift;
@@ -30,6 +30,7 @@ sub spawn {
 		      unshift   => '_command',
 		      recent    => '_command',
 		      check     => '_command',
+		      indices   => '_command',
 	   },
 	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
 	],
@@ -122,6 +123,17 @@ sub _command {
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', 1 ];
     }
     $args->{debug} = 1;
+  }
+  elsif ( $state eq 'indices' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_reload_indices;
+	$args->{program_args} = [ $args->{perl} || $^X ];
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	my $code = 'CPANPLUS::Backend->new()->reload_indices( update_source => 1 );';
+	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code ];
+    }
   }
   else {
     if ( $^O eq 'MSWin32' ) {
@@ -306,6 +318,18 @@ sub _recent_modules {
   exit( $hashref->{$pid}->{exitcode} );
 }
 
+sub _reload_indices {
+  my $perl = shift;
+  my $cmdline = $perl . ' -MCPANPLUS::Backend -e "CPANPLUS::Backend->new()->reload_indices( update_source => 1 );"';
+  my $job = Win32::Job->new()
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
+}
 1;
 __END__
 
@@ -486,6 +510,17 @@ defined:
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.
   
+=item indices
+
+Forces an update of the CPANPLUS indices. Takes one parameter, a hashref with the following keys defined:
+
+  'event', an event name for the results to be sent to (Mandatory);
+  'session', which session the result event should go to (Default is the sender);
+  'perl', which perl executable to use (Default whatever is in $^X);
+
+It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
+possible future API clashes.
+
 =back
 
 =head1 OUTPUT EVENTS
