@@ -1,6 +1,12 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.16	Tue Feb 27 16:52:08 GMT 2007
+	- Indices doesn't require a 'module' option. Fixed.
+
+0.15    Tue Feb 27 13:46:05 GMT 2007
+	- Added 'indices' command
+
 0.14	Tue Feb 20 09:46:07 GMT 2007
 	- Added kwalitee test
 

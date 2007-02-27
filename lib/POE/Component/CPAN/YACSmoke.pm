@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 sub spawn {
   my $package = shift;
@@ -92,7 +92,7 @@ sub _command {
   my $ref = $kernel->alias_resolve( $args->{session} ) || $sender;
   $args->{session} = $ref->ID();
 
-  if ( !$args->{module} and $state !~ /^(recent|check)$/i ) {
+  if ( !$args->{module} and $state !~ /^(recent|check|indices)$/i ) {
 	warn "No 'module' specified for $state";
 	return;
   }
