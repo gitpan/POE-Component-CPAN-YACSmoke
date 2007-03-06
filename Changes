@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.17	Tue Mar 06 10:19:41 GMT 2007
+	- Added --version option to minismoker.
+	- Added --reverse option to minismoker.
+
 0.16	Tue Feb 27 16:52:08 GMT 2007
 	- Indices doesn't require a 'module' option. Fixed.
 

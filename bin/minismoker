@@ -5,10 +5,15 @@ use Getopt::Long;
 
 $|=1;
 
-my ($perl, $jobs, $appdata, $indices);
+my ($perl, $jobs, $appdata, $indices, $version, $reverse);
 my $debug = 0;
 
-GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices );
+GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices, 'version' => \$version, 'reverse' => \$reverse );
+
+if ( $version ) {
+  print "$0 - version ", $POE::Component::CPAN::YACSmoke::VERSION, "\n";
+  exit 0;
+}
 
 $ENV{APPDATA} = $appdata if $appdata;
 
@@ -87,8 +92,14 @@ sub _results {
 
 sub _recent {
   my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
-  $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+  if ( $reverse ) {
+    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+	for reverse @{ $job->{recent} };
+  }
+  else {
+    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
 	for @{ $job->{recent} };
+  }
   undef;
 }
 
@@ -112,6 +123,10 @@ It spits out the results of each smoke to STDOUT.
 =head1 SWITCHES
 
 =over
+
+=item --version
+
+Prints the version number on STDOUT and exits.
 
 =item --perl
 
@@ -137,9 +152,13 @@ Spews out whatever is happening in the component as it happens.
 Specify a path to where L<CPANPLUS> can find your .cpanplus folder. This sets the APPDATA environment
 variable.
 
-=item indices
+=item --indices
 
 Specify if the L<CPANPLUS> should reload its indices before proceeding with the smoke.
+
+=item --reverse
+
+If specified reverses the processing of recently uploaded modules.
 
 =back
 
