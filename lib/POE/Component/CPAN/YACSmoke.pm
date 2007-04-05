@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.17';
+$VERSION = '0.18';
 
 sub spawn {
   my $package = shift;
@@ -219,7 +219,7 @@ sub _spawn_wheel {
   $job->{PID} = $self->{wheel}->PID();
   $job->{start_time} = time();
   $kernel->sig_child( $job->{PID}, '_sig_child' );
-  $kernel->delay( '_wheel_idle', 60 );
+  $kernel->delay( '_wheel_idle', 60 ) unless $job->{cmd} eq 'indices';
   undef;
 }
 
