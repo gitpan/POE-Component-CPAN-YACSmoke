@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.19	Tue Apr 17 17:10:01 BST 2007
+	- Added optional support for Proc::Killfam. If it's installed
+	  we'll use it.
+
 0.18	Thu Apr 05 07:15:49 BST 2007
 	- Disabled output idle timeout for 'indices'.
 

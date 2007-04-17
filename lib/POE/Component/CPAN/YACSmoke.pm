@@ -4,7 +4,17 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.18';
+$VERSION = '0.19';
+
+my $GOT_KILLFAM;
+
+BEGIN {
+	$GOT_KILLFAM = 0;
+	eval {
+		require Proc::Killfam;
+		$GOT_KILLFAM = 1;
+	};
+}
 
 sub spawn {
   my $package = shift;
@@ -269,7 +279,12 @@ sub _wheel_idle {
 	}
     }
     else {
-      $self->{wheel}->kill(9) if $self->{wheel};
+      if ( $GOT_KILLFAM ) {
+	Proc::Killfam::killfam( 9, $self->{wheel}->PID() ) if $self->{wheel};
+      }
+      else {
+        $self->{wheel}->kill(9) if $self->{wheel};
+      }
     }
   } 
   else {
