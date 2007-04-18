@@ -1,6 +1,12 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.21	Wed Apr 18 12:20:56 BST 2007
+	- Screwed up the cpan upload. Merely a version update.
+
+0.20	Wed Apr 18 12:17:06 BST 2007
+	- Refactored Killfam we attempt to kill child processes first.
+
 0.19	Tue Apr 17 17:10:01 BST 2007
 	- Added optional support for Proc::Killfam. If it's installed
 	  we'll use it.

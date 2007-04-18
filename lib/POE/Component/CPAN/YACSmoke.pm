@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 my $GOT_KILLFAM;
 
