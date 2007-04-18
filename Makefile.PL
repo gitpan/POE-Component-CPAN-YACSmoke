@@ -10,8 +10,8 @@ if ( $^O eq 'MSWin32' ) {
   requires 'Win32::Job' => 0;
 }
 else {
-  my $value = prompt( 'Do you want to enable optional Proc::Killfam support [y/N]?', 'N' );
-  requires 'Proc::Killfam' => 0 if $value =~ /^Y/i;
+  my $value = prompt( 'Do you want to enable optional Proc::ProcessTable support [y/N]?', 'N' );
+  requires 'Proc::ProcessTable' => 0 if $value =~ /^Y/i;
 }
 install_script 'bin/minismoker';
 WriteAll();

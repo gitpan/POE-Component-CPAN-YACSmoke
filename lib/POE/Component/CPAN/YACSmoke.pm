@@ -4,14 +4,14 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.19';
+$VERSION = '0.20';
 
 my $GOT_KILLFAM;
 
 BEGIN {
 	$GOT_KILLFAM = 0;
 	eval {
-		require Proc::Killfam;
+		require Proc::ProcessTable;
 		$GOT_KILLFAM = 1;
 	};
 }
@@ -280,7 +280,7 @@ sub _wheel_idle {
     }
     else {
       if ( $GOT_KILLFAM ) {
-	Proc::Killfam::killfam( 9, $self->{wheel}->PID() ) if $self->{wheel};
+	_kill_family( 9, $self->{wheel}->PID() ) if $self->{wheel};
       }
       else {
         $self->{wheel}->kill(9) if $self->{wheel};
@@ -345,6 +345,30 @@ sub _reload_indices {
   my $hashref = $job->status();
   exit( $hashref->{$pid}->{exitcode} );
 }
+
+sub _kill_family {
+  my ($signal, @pids) = @_;
+  my $pt = Proc::ProcessTable->new;
+  my (@procs) =  @{$pt->table};
+  my (@kids) = _get_pids( \@procs, @pids );
+  @pids = (@pids, @kids);
+  kill $signal, reverse @pids;
+}
+
+sub _get_pids {
+  my($procs, @kids) = @_;
+  my @pids;
+  foreach my $kid (@kids) {
+    foreach my $proc (@$procs) {
+      if ($proc->ppid == $kid) {
+	my $pid = $proc->pid;
+	push @pids, $pid, _get_pids( $procs, $pid );
+      } 
+    }
+  }
+  @pids;
+}
+
 1;
 __END__
 
