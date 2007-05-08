@@ -5,10 +5,10 @@ use Getopt::Long;
 
 $|=1;
 
-my ($perl, $jobs, $appdata, $indices, $version, $reverse);
+my ($perl, $jobs, $appdata, $indices, $version, $reverse, $package, $author);
 my $debug = 0;
 
-GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices, 'version' => \$version, 'reverse' => \$reverse );
+GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices, 'version' => \$version, 'reverse' => \$reverse, 'author=s' => \$author, 'package=s' => \$package );
 
 if ( $version ) {
   print "$0 - version ", $POE::Component::CPAN::YACSmoke::VERSION, "\n";
@@ -31,7 +31,7 @@ my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => $
 
 POE::Session->create(
 	package_states => [
-	   'main' => [ qw(_start _start_smoking _stop _results _recent _check _indices) ],
+	   'main' => [ qw(_start _start_smoking _stop _results _recent _check _indices _search) ],
 	],
 	heap => { perl => $perl, pending => \@pending, indices => $indices },
 );
@@ -71,6 +71,12 @@ sub _start_smoking {
     $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } ) 
 	for @{ $heap->{pending} };
   } 
+  elsif ( $author ) {
+    $kernel->post( 'smoker', 'author', { event => '_search', perl => $heap->{perl}, search => $author, debug => $debug } );
+  }
+  elsif ( $package ) {
+    $kernel->post( 'smoker', 'package', { event => '_search', perl => $heap->{perl}, search => $package, debug => $debug } );
+  }
   else {
     $kernel->post( 'smoker', 'recent', { event => '_recent', perl => $heap->{perl}, debug => $debug } );
   }
@@ -87,6 +93,13 @@ sub _results {
   return if $debug;
   print STDOUT "Module: ", $job->{module}, "\n";
   print STDOUT "$_\n" for @{ $job->{log} };
+  undef;
+}
+
+sub _search {
+  my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
+  $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+    for @{ $job->{results} };
   undef;
 }
 
@@ -142,6 +155,15 @@ Specify a file with modules to be smoked, eg.
 
 If a job file is not provided the script obtains a list of recently uploaded modules and processes
 them.
+
+=item --author
+
+Specify the cpanid of an CPAN author. This will determine the list of modules that the script will smoke.
+
+=item --package
+
+Specify a string representing a package search criteria to use. The list of modules generated will then
+be smoked.
 
 =item --debug 
 

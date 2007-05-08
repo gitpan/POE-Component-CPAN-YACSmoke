@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+0.22	Tue May 08 14:31:56 BST 2007
+	- Added 'package' and 'author' commands for searching CPANPLUS;
+	- Updated minismoker to use above commands.
+
 0.21	Wed Apr 18 12:20:56 BST 2007
 	- Screwed up the cpan upload. Merely a version update.
 

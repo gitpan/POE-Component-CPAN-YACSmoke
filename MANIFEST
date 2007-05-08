@@ -2,6 +2,8 @@ bin/minismoker
 Changes
 examples/minismoker.pl
 examples/recent_modules.pl
+examples/author_search.pl
+examples/package_search.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
@@ -22,6 +24,8 @@ t/02_recent.t
 t/03_debug.t
 t/04_check.t
 t/05_indices.t
+t/06_author.t
+t/07_package.t
 t/99_pod.t
 t/99_pod_coverage.t
 t/99_test_kwalitee.t

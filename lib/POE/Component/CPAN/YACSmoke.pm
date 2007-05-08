@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.21';
+$VERSION = '0.22';
 
 my $GOT_KILLFAM;
 
@@ -41,6 +41,8 @@ sub spawn {
 		      recent    => '_command',
 		      check     => '_command',
 		      indices   => '_command',
+		      author    => '_command',
+		      'package' => '_command',
 	   },
 	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
 	],
@@ -102,13 +104,18 @@ sub _command {
   my $ref = $kernel->alias_resolve( $args->{session} ) || $sender;
   $args->{session} = $ref->ID();
 
-  if ( !$args->{module} and $state !~ /^(recent|check|indices)$/i ) {
+  if ( !$args->{module} and $state !~ /^(recent|check|indices|package|author)$/i ) {
 	warn "No 'module' specified for $state";
 	return;
   }
 
   unless ( $args->{event} ) {
 	warn "No 'event' specified for $state";
+	return;
+  }
+
+  if ( $state =~ /^(package|author)$/ and !$args->{search} ) {
+	warn "No 'search' criteria specified for $state";
 	return;
   }
 
@@ -143,6 +150,28 @@ sub _command {
 	my $perl = $args->{perl} || $^X;
 	my $code = 'CPANPLUS::Backend->new()->reload_indices( update_source => 1 );';
 	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code ];
+    }
+  }
+  elsif ( $state eq 'author' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_author_search;
+	$args->{program_args} = [ $args->{perl} || $^X, $args->{type} || 'cpanid', $args->{search} ];
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	my $code = 'my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } map { $_->modules() } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;';
+	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code, $args->{type} || 'cpanid', $args->{search} ];
+    }
+  }
+  elsif ( $state eq 'package' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_package_search;
+	$args->{program_args} = [ $args->{perl} || $^X, $args->{type} || 'package', $args->{search} ];
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	my $code = 'my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;';
+	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code, $args->{type} || 'package', $args->{search} ];
     }
   }
   else {
@@ -185,6 +214,11 @@ sub _sig_child {
     pop @{ $log };
     s/\x0D$// for @{ $log };
     $job->{recent} = $log;
+  }
+  elsif ( $job->{cmd} =~ /^(package|author)$/ ) {
+    pop @{ $log };
+    s/\x0D$// for @{ $log };
+    @{ $job->{results} } = grep { $_ !~ /^\[/ } @{ $log };
   }
   else {
     $job->{log} = $log;
@@ -336,6 +370,36 @@ sub _recent_modules {
 sub _reload_indices {
   my $perl = shift;
   my $cmdline = $perl . ' -MCPANPLUS::Backend -e "CPANPLUS::Backend->new()->reload_indices( update_source => 1 );"';
+  my $job = Win32::Job->new()
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
+}
+
+sub _author_search {
+  my $perl = shift;
+  my $type = shift;
+  my $search = shift;
+  my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } map { $_->modules() } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;" ' . $type . " " . $search;
+  my $job = Win32::Job->new()
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
+}
+
+sub _package_search {
+  my $perl = shift;
+  my $type = shift;
+  my $search = shift;
+  my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;" ' . $type . " " . $search;
   my $job = Win32::Job->new()
     or die Win32::FormatMessage( Win32::GetLastError() );
   my $pid = $job->spawn( $perl, $cmdline )
@@ -537,6 +601,36 @@ Takes one parameter, hashref with the following keys defined:
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.
 
+=item author
+
+Obtain a list of distributions for a given author.
+
+Takes one parameter, a hashref with the following keys defined:
+
+  'event', an event name for the results to be sent to (Mandatory);
+  'session', which session the result event should go to (Default is the sender);
+  'perl', which perl executable to use (Default whatever is in $^X);
+  'type', specify the type of search to conduct, 'cpanid', 'author' or 'email', default is 'cpanid';
+  'search', a string representing the search criteria to use (Mandatory);
+
+It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
+possible future API clashes.
+
+=item package
+
+obtain a list of distributions given criteria to search for.
+
+Takes one parameter, a hashref with the following keys defined:
+
+  'event', an event name for the results to be sent to (Mandatory);
+  'session', which session the result event should go to (Default is the sender);
+  'perl', which perl executable to use (Default whatever is in $^X);
+  'type', specify the type of search to conduct, 'package', 'name', etc., default is 'package';
+  'search', a string representing the search criteria to use (Mandatory);
+
+It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
+possible future API clashes.
+
 =item check
 
 Checks whether L<CPAN::YACSmoke> is installed. Takes one parameter a hashref with the following keys 
@@ -576,6 +670,10 @@ Resultant events will have a hashref as ARG0. All the keys passed in as part of 
 The results of a 'recent' request will be same as above apart from an additional key:
 
   'recent', an arrayref of recently uploaded modules;
+
+The results of a 'package' or 'author' search will be same as other events apart from an additional key:
+
+  'results', an arrayref of the modules returned by the search;
 
 =head1 MSWin32
 
