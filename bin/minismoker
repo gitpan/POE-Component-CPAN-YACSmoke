@@ -67,6 +67,7 @@ sub _indices {
 
 sub _start_smoking {
   my ($kernel,$heap) = @_[KERNEL,HEAP];
+  $heap->{_start_time} = time();
   if ( @{ $heap->{pending} } ) {
     $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } ) 
 	for @{ $heap->{pending} };
@@ -84,7 +85,13 @@ sub _start_smoking {
 }
 
 sub _stop {
+  my $heap = $_[HEAP];
+  my $finish = time();
+  my $cumulative = $finish - $heap->{_start_time};
   $poe_kernel->call( 'smoker', 'shutdown' );
+  print STDOUT "$0 started at: \t", scalar localtime($heap->{_start_time}), "\n";
+  print STDOUT "$0 finished at: \t", scalar localtime($finish), "\n";
+  print STDOUT "$0 ran for: \t", $cumulative, "\n";
   undef;
 }
 

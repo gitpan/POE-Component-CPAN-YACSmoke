@@ -4,6 +4,7 @@ examples/minismoker.pl
 examples/recent_modules.pl
 examples/author_search.pl
 examples/package_search.pl
+examples/flush.pl
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
@@ -26,6 +27,7 @@ t/04_check.t
 t/05_indices.t
 t/06_author.t
 t/07_package.t
+t/08_flush.t
 t/99_pod.t
 t/99_pod_coverage.t
 t/99_test_kwalitee.t

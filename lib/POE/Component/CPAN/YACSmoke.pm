@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.22';
+$VERSION = '0.23';
 
 my $GOT_KILLFAM;
 
@@ -42,6 +42,7 @@ sub spawn {
 		      check     => '_command',
 		      indices   => '_command',
 		      author    => '_command',
+		      flush	=> '_command',
 		      'package' => '_command',
 	   },
 	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
@@ -104,7 +105,7 @@ sub _command {
   my $ref = $kernel->alias_resolve( $args->{session} ) || $sender;
   $args->{session} = $ref->ID();
 
-  if ( !$args->{module} and $state !~ /^(recent|check|indices|package|author)$/i ) {
+  if ( !$args->{module} and $state !~ /^(recent|check|indices|package|author|flush)$/i ) {
 	warn "No 'module' specified for $state";
 	return;
   }
@@ -172,6 +173,17 @@ sub _command {
 	my $perl = $args->{perl} || $^X;
 	my $code = 'my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;';
 	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code, $args->{type} || 'package', $args->{search} ];
+    }
+  }
+  elsif ( $state eq 'flush' ) {
+    if ( $^O eq 'MSWin32' ) {
+	$args->{program} = \&_flush;
+	$args->{program_args} = [ $args->{perl} || $^X, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
+    }
+    else {
+	my $perl = $args->{perl} || $^X;
+	my $code = 'my $type = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->flush($type) if $smoke->can("flush");';
+	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
     }
   }
   else {
@@ -354,6 +366,19 @@ sub _test_module {
   exit( $hashref->{$pid}->{exitcode} );
 }
 
+sub _flush {
+  my $perl = shift;
+  my $type = shift;
+  my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $type = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->flush($type) if $smoke->can(q{flush});" ' . $type;
+  my $job = Win32::Job->new()
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  my $pid = $job->spawn( $perl, $cmdline )
+    or die Win32::FormatMessage( Win32::GetLastError() );
+  warn $pid, "\n";
+  my $ok = $job->watch( sub { 0 }, 60 );
+  my $hashref = $job->status();
+  exit( $hashref->{$pid}->{exitcode} );
+}
 sub _recent_modules {
   my $perl = shift;
   my $cmdline = $perl . ' -MCPAN::YACSmoke -e "my $smoke = CPAN::YACSmoke->new();print qq{$_\n} for $smoke->{plugin}->download_list();"';
