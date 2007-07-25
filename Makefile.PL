@@ -3,6 +3,8 @@ name 'POE-Component-CPAN-YACSmoke';
 author 'Chris Williams <chris@bingosnet.co.uk>';
 license 'perl';
 version_from 'lib/POE/Component/CPAN/YACSmoke.pm';
+abstract_from 'lib/POE/Component/CPAN/YACSmoke.pm';
+build_requires 'Test::More' => 0.47;
 requires 'POE' => 0.38;
 requires 'File::Spec' => 0;
 if ( $^O eq 'MSWin32' ) {

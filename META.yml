@@ -1,5 +1,8 @@
 --- 
+abstract: Bringing the power of POE to CPAN smoke testing.
 author: Chris Williams <chris@bingosnet.co.uk>
+build_requires: 
+  Test::More: 0.47
 distribution_type: module
 generated_by: Module::Install version 0.67
 license: perl
@@ -14,5 +17,4 @@ no_index:
 requires: 
   File::Spec: 0
   POE: 0.38
-  Proc::ProcessTable: 0
-version: 0.23
+version: 1.00

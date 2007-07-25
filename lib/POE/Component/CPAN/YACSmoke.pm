@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '0.23';
+$VERSION = '1.00';
 
 my $GOT_KILLFAM;
 
@@ -463,7 +463,7 @@ __END__
 
 =head1 NAME
 
-POE::Component::CPAN::YACSmoke - bringing the power of POE to CPAN smoke testing.
+POE::Component::CPAN::YACSmoke - Bringing the power of POE to CPAN smoke testing.
 
 =head1 SYNOPSIS
 
