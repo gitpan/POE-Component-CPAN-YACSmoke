@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '1.00';
+$VERSION = '1.01';
 
 my $GOT_KILLFAM;
 
@@ -241,6 +241,7 @@ sub _sig_child {
     delete $job->{program_args};
   }
   $self->{debug} = delete $job->{global_debug};
+  $ENV{APPDATA} = delete $job->{backup_env} if $job->{appdata};
   $kernel->post( $job->{session}, $job->{event}, $job );
   $kernel->refcount_decrement( $job->{session}, __PACKAGE__ );
   $kernel->yield( '_spawn_wheel' );
@@ -253,6 +254,10 @@ sub _spawn_wheel {
   return if $self->{_shutdown};
   my $job = shift @{ $self->{job_queue} };
   return unless $job;
+  if ( $job->{appdata} ) {
+    $job->{backup_env} = $ENV{APPDATA};
+    $ENV{APPDATA} = $job->{appdata};
+  }
   $self->{wheel} = POE::Wheel::Run->new(
     Program     => $job->{program},
     ProgramArgs => $job->{program_args},
@@ -593,6 +598,7 @@ All the events that the component will accept (unless noted otherwise ) require 
   'session', which session the result event should go to (Default is the sender);
   'perl', which perl executable to use (Default whatever is in $^X);
   'debug', turn on or off debugging information for this particular job;
+  'appdata', the path where CPANPLUS should look for it's .cpanplus folder;
 
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.

@@ -17,4 +17,4 @@ no_index:
 requires: 
   File::Spec: 0
   POE: 0.38
-version: 1.00
+version: 1.01
