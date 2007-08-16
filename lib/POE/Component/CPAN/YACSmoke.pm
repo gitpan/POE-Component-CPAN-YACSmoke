@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 
 my $GOT_KILLFAM;
 
@@ -354,7 +354,7 @@ sub _check_yacsmoke {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _test_module {
@@ -368,7 +368,7 @@ sub _test_module {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _flush {
@@ -382,7 +382,7 @@ sub _flush {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 sub _recent_modules {
   my $perl = shift;
@@ -394,7 +394,7 @@ sub _recent_modules {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _reload_indices {
@@ -407,7 +407,7 @@ sub _reload_indices {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _author_search {
@@ -422,7 +422,7 @@ sub _author_search {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _package_search {
@@ -437,7 +437,7 @@ sub _package_search {
   warn $pid, "\n";
   my $ok = $job->watch( sub { 0 }, 60 );
   my $hashref = $job->status();
-  exit( $hashref->{$pid}->{exitcode} );
+  return $hashref->{$pid}->{exitcode};
 }
 
 sub _kill_family {

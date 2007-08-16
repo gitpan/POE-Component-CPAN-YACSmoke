@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.03	Thu Aug 16 17:35:22 BST 2007
+	- Changed all the MSWin32 subs to use return() instead of exit() as per 
+	  Wheel::Run's warnings about using exit();
+
 1.02	Wed Aug 15 12:16:29 BST 2007
 	- Updated Changes which I'd forgotten to update
 
