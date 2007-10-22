@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 my $GOT_KILLFAM;
 
@@ -45,7 +45,7 @@ sub spawn {
 		      flush	=> '_command',
 		      'package' => '_command',
 	   },
-	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _sig_child) ],
+	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _wheel_kill _sig_child) ],
 	],
 	heap => $self,
 	( ref($options) eq 'HASH' ? ( options => $options ) : () ),
@@ -76,6 +76,7 @@ sub _start {
   }
   $self->{job_queue} = [ ];
   $self->{idle} = 600 unless $self->{idle};
+  $self->{timeout} = 3600 unless $self->{timeout};
   undef;
 }
 
@@ -319,27 +320,36 @@ sub _wheel_stderr {
 
 sub _wheel_idle {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
-  if ( time() - $self->{_wheel_time} >= $self->{idle} ) {
-    push @{ $self->{_wheel_log} }, "Killing current run due to excessive idle";
-    warn "Killing current run due to excessive idle\n" if $self->{debug};
-    if ( $^O eq 'MSWin32' and $self->{wheel} ) {
-	my $grp_pid = $self->{_current_job}->{GRP_PID};
-	return unless $grp_pid;
-	unless( Win32::Process::KillProcess( $grp_pid, 0 ) ) {
-	   warn Win32::FormatMessage( Win32::GetLastError() );
-	}
+  my $now = time();
+  if ( $now - $self->{_wheel_time} >= $self->{idle} ) {
+    $kernel->yield( '_wheel_kill', 'Killing current run due to excessive idle' );
+    return;
+  }
+  if ( $now - $self->{_current_job}->{start_time} >= $self->{timeout} ) {
+    $kernel->yield( '_wheel_kill', 'Killing current run due to excessive run-time' );
+    return;
+  }
+  $kernel->delay( '_wheel_idle', 60 );
+  return;
+}
+
+sub _wheel_kill {
+  my ($kernel,$self,$reason) = @_[KERNEL,OBJECT,ARG0];
+  push @{ $self->{_wheel_log} }, $reason;
+  warn $reason, "\n" if $self->{debug};
+  if ( $^O eq 'MSWin32' and $self->{wheel} ) {
+    my $grp_pid = $self->{_current_job}->{GRP_PID};
+    return unless $grp_pid;
+    warn Win32::FormatMessage( Win32::GetLastError() )
+	unless Win32::Process::KillProcess( $grp_pid, 0 );
+  }
+  else {
+    if ( $GOT_KILLFAM ) {
+      _kill_family( 9, $self->{wheel}->PID() ) if $self->{wheel};
     }
     else {
-      if ( $GOT_KILLFAM ) {
-	_kill_family( 9, $self->{wheel}->PID() ) if $self->{wheel};
-      }
-      else {
-        $self->{wheel}->kill(9) if $self->{wheel};
-      }
+      $self->{wheel}->kill(9) if $self->{wheel};
     }
-  } 
-  else {
-    $kernel->delay( '_wheel_idle', 60 );
   }
   return;
 }
@@ -564,6 +574,7 @@ Spawns a new component session and waits for requests. Takes the following optio
   'options', specify some POE::Session options;
   'debug', see lots of text on your console;
   'idle', adjust the job idle time ( default: 600 seconds ), before jobs get killed;
+  'timeout', adjust the total job runtime ( default: 3600 seconds ), before a job is killed;
 
 Returns a POE::Component::CPAN::YACSmoke object.
 
@@ -736,5 +747,7 @@ L<POE>
 L<CPANPLUS>
 
 L<CPAN::YACSmoke>
+
+L<http://cpantest.grango.org/cgi-bin/pages.cgi?act=wiki-page&pagename=YACSmokePOE>
 
 L<http://use.perl.org/~BinGOs/journal/>
