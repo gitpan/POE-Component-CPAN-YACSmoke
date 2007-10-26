@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.05	Fri Oct 26 17:02:08 BST 2007
+	- Added 'prioritise' option to 'indices' action;
+
 1.04	Mon Oct 22 14:18:06 BST 2007
 	- Added 'timeout' option for limiting the total runtime of a job;
 

@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '1.04';
+$VERSION = '1.05';
 
 my $GOT_KILLFAM;
 
@@ -144,6 +144,7 @@ sub _command {
     $args->{debug} = 1;
   }
   elsif ( $state eq 'indices' ) {
+    $args->{prioritise} = 0 unless $args->{prioritise};
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_reload_indices;
 	$args->{program_args} = [ $args->{perl} || $^X ];
@@ -177,6 +178,7 @@ sub _command {
     }
   }
   elsif ( $state eq 'flush' ) {
+    $args->{prioritise} = 0 unless $args->{prioritise};
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_flush;
 	$args->{program_args} = [ $args->{perl} || $^X, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
@@ -203,7 +205,7 @@ sub _command {
 
   $args->{cmd} = $state;
 
-  if ( $state eq 'unshift' or $state eq 'recent' ) {
+  if ( $state eq 'unshift' or $state eq 'recent' or $args->{prioritise} ) {
     unshift @{ $self->{job_queue} }, $args;
   }
   else {
@@ -692,6 +694,7 @@ Forces an update of the CPANPLUS indices. Takes one parameter, a hashref with th
   'event', an event name for the results to be sent to (Mandatory);
   'session', which session the result event should go to (Default is the sender);
   'perl', which perl executable to use (Default whatever is in $^X);
+  'prioritise', set to 1 to put action at the front of the job queue, default 0;
 
 It is possible to pass arbitrary keys in the hash. These should be proceeded with an underscore to avoid
 possible future API clashes.
