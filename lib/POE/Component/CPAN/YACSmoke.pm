@@ -4,7 +4,7 @@ use strict;
 use POE qw(Wheel::Run);
 use vars qw($VERSION);
 
-$VERSION = '1.06';
+$VERSION = '1.07';
 
 my $GOT_KILLFAM;
 
@@ -120,6 +120,8 @@ sub _command {
 	warn "No 'search' criteria specified for $state";
 	return;
   }
+
+  $args->{submitted} = time();
 
   if ( $state eq 'recent' ) {
     if ( $^O eq 'MSWin32' ) {
@@ -709,6 +711,7 @@ Resultant events will have a hashref as ARG0. All the keys passed in as part of 
   'log', an arrayref of STDOUT and STDERR produced by the job;
   'PID', the process ID of the POE::Wheel::Run;
   'status', the $? of the process;
+  'submitted', the time in epoch seconds when the job was submitted;
   'start_time', the time in epoch seconds when the job started running;
   'end_time', the time in epoch seconds when the job finished;
 

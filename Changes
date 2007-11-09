@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.07	Fri Nov  9 09:33:12 GMT 2007
+	- Added 'submitted' time field for SmokeBox;
+
 1.06	Wed Oct 31 14:25:14 GMT 2007
 	- Updated Module::Install to 0.68
 

@@ -9,7 +9,7 @@ use POE;
 #   }
 #}
 
-plan tests => 10;
+plan tests => 11;
 
 require_ok('POE::Component::CPAN::YACSmoke');
 
@@ -54,7 +54,7 @@ sub _timeout {
 
 sub _results {
   my $job = $_[ARG0];
-  ok( $job->{$_}, "There was a $_" ) for qw(log start_time end_time PID status);
+  ok( $job->{$_}, "There was a $_" ) for qw(log start_time end_time PID status submitted);
   ok( $job->{module} eq $module, "Module was the same" );
   ok( $job->{_ArBiTrArY} eq '12345', "The Arbitary value can through unchanged" );
   $poe_kernel->delay( '_time_out' );
