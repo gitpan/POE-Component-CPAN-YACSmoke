@@ -5,6 +5,7 @@ license 'perl';
 version_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 abstract_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 build_requires 'Test::More' => 0.47;
+requires 'Storable' => 0;
 requires 'POE' => 0.38;
 requires 'File::Spec' => 0;
 if ( $^O eq 'MSWin32' ) {

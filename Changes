@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.08	Sat Nov 10 10:11:53 GMT 2007
+	- Added 'current_job' and 'current_log' methods for SmokeBox.
+
 1.07	Fri Nov  9 09:33:12 GMT 2007
 	- Added 'submitted' time field for SmokeBox;
 

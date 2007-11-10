@@ -2,9 +2,10 @@ package POE::Component::CPAN::YACSmoke;
 
 use strict;
 use POE qw(Wheel::Run);
+use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.07';
+$VERSION = '1.08';
 
 my $GOT_KILLFAM;
 
@@ -59,6 +60,20 @@ sub session_id {
 
 sub pending_jobs {
   return @{ $_[0]->{job_queue} };
+}
+
+sub current_job {
+  my $self = shift;
+  return unless $self->{_current_job};
+  my $item = Storable::dclone( $self->{_current_job} );
+  return $item;
+}
+
+sub current_log {
+  my $self = shift;
+  return unless $self->{_wheel_log};
+  my $item = Storable::dclone( $self->{_wheel_log} );
+  return $item;
 }
 
 sub shutdown {
@@ -596,6 +611,14 @@ Returns the POE::Session ID of the component's session.
 
 In a scalar context returns the number of currently pending jobs. In a list context, returns a list of hashrefs
 which are the jobs currently waiting in the job queue.
+
+=item current_job
+
+Returns a hashref containing details of the currently executing smoke job. Returns undef if there isn't a job currently running.
+
+=item current_log
+
+Returns an arrayref of log output from the currently executing smoke job. Returns undef if there isn't a job currently running.
 
 =item shutdown
 

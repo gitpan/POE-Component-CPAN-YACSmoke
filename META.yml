@@ -18,5 +18,5 @@ no_index:
 requires: 
   File::Spec: 0
   POE: 0.38
-  Proc::ProcessTable: 0
-version: 1.07
+  Storable: 0
+version: 1.08
