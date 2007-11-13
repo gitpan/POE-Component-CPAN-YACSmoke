@@ -27,7 +27,7 @@ if ( $jobs ) {
   close($fh);
 }
 
-my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker',debug => $debug, options => { trace => 0 } );
+my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker', debug => $debug, options => { trace => 0 }, perl => $perl );
 
 POE::Session->create(
 	package_states => [
@@ -41,7 +41,7 @@ exit 0;
 
 sub _start {
   my ($kernel,$heap) = @_[KERNEL,HEAP];
-  $kernel->post( 'smoker', 'check', { event => '_check', perl => $heap->{perl}, debug => $debug } );
+  $kernel->post( 'smoker', 'check', { event => '_check', debug => $debug } );
   undef;
 }
 
@@ -53,7 +53,7 @@ sub _check {
      return;
   }
   if ( $heap->{indices} ) {
-    $kernel->post( 'smoker', 'indices', { event => '_indices', perl => $heap->{perl}, debug => $debug } );
+    $kernel->post( 'smoker', 'indices', { event => '_indices', debug => $debug } );
     return;
   }
   $kernel->yield('_start_smoking');
@@ -69,17 +69,17 @@ sub _start_smoking {
   my ($kernel,$heap) = @_[KERNEL,HEAP];
   $heap->{_start_time} = time();
   if ( @{ $heap->{pending} } ) {
-    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } ) 
+    $kernel->post( 'smoker', 'submit', { event => '_results', module => $_, debug => $debug } ) 
 	for @{ $heap->{pending} };
   } 
   elsif ( $author ) {
-    $kernel->post( 'smoker', 'author', { event => '_search', perl => $heap->{perl}, search => $author, debug => $debug } );
+    $kernel->post( 'smoker', 'author', { event => '_search', search => $author, debug => $debug } );
   }
   elsif ( $package ) {
-    $kernel->post( 'smoker', 'package', { event => '_search', perl => $heap->{perl}, search => $package, debug => $debug } );
+    $kernel->post( 'smoker', 'package', { event => '_search', search => $package, debug => $debug } );
   }
   else {
-    $kernel->post( 'smoker', 'recent', { event => '_recent', perl => $heap->{perl}, debug => $debug } );
+    $kernel->post( 'smoker', 'recent', { event => '_recent', debug => $debug } );
   }
   undef;
 }
@@ -105,7 +105,7 @@ sub _results {
 
 sub _search {
   my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
-  $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+  $kernel->post( 'smoker', 'submit', { event => '_results', module => $_, debug => $debug } )
     for @{ $job->{results} };
   undef;
 }
@@ -113,11 +113,11 @@ sub _search {
 sub _recent {
   my ($kernel,$heap,$job) = @_[KERNEL,HEAP,ARG0];
   if ( $reverse ) {
-    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+    $kernel->post( 'smoker', 'submit', { event => '_results', module => $_, debug => $debug } )
 	for reverse @{ $job->{recent} };
   }
   else {
-    $kernel->post( 'smoker', 'submit', { event => '_results', perl => $heap->{perl}, module => $_, debug => $debug } )
+    $kernel->post( 'smoker', 'submit', { event => '_results', module => $_, debug => $debug } )
 	for @{ $job->{recent} };
   }
   undef;

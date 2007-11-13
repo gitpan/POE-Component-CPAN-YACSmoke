@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.08';
+$VERSION = '1.09';
 
 my $GOT_KILLFAM;
 
@@ -92,6 +92,7 @@ sub _start {
   $self->{job_queue} = [ ];
   $self->{idle} = 600 unless $self->{idle};
   $self->{timeout} = 3600 unless $self->{timeout};
+  $ENV{APPDATA} = $self->{appdata} if $self->{appdata};
   undef;
 }
 
@@ -141,10 +142,10 @@ sub _command {
   if ( $state eq 'recent' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_recent_modules;
-	$args->{program_args} = [ $args->{perl} || $^X ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $smoke = CPAN::YACSmoke->new(); print "$_\n" for $smoke->{plugin}->download_list();';
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code ];
     }
@@ -152,10 +153,10 @@ sub _command {
   elsif ( $state eq 'check' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_check_yacsmoke;
-	$args->{program_args} = [ $args->{perl} || $^X ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', 1 ];
     }
     $args->{debug} = 1;
@@ -164,10 +165,10 @@ sub _command {
     $args->{prioritise} = 0 unless $args->{prioritise};
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_reload_indices;
-	$args->{program_args} = [ $args->{perl} || $^X ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'CPANPLUS::Backend->new()->reload_indices( update_source => 1 );';
 	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code ];
     }
@@ -175,10 +176,10 @@ sub _command {
   elsif ( $state eq 'author' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_author_search;
-	$args->{program_args} = [ $args->{perl} || $^X, $args->{type} || 'cpanid', $args->{search} ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, $args->{type} || 'cpanid', $args->{search} ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } map { $_->modules() } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;';
 	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code, $args->{type} || 'cpanid', $args->{search} ];
     }
@@ -186,10 +187,10 @@ sub _command {
   elsif ( $state eq 'package' ) {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_package_search;
-	$args->{program_args} = [ $args->{perl} || $^X, $args->{type} || 'package', $args->{search} ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, $args->{type} || 'package', $args->{search} ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $type = shift; my $search = shift; my $cb = CPANPLUS::Backend->new(); my %mods = map { $_->package() => 1 } $cb->search( type => $type, allow => [ qr/$search/ ], [ verbose => 0 ] ); print qq{$_\n} for sort keys %mods;';
 	$args->{program} = [ $perl, '-MCPANPLUS::Backend', '-e', $code, $args->{type} || 'package', $args->{search} ];
     }
@@ -198,10 +199,10 @@ sub _command {
     $args->{prioritise} = 0 unless $args->{prioritise};
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_flush;
-	$args->{program_args} = [ $args->{perl} || $^X, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $type = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->flush($type) if $smoke->can("flush");';
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
     }
@@ -209,10 +210,10 @@ sub _command {
   else {
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_test_module;
-	$args->{program_args} = [ $args->{perl} || $^X, $args->{module} ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, $args->{module} ];
     }
     else {
-	my $perl = $args->{perl} || $^X;
+	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $module = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->test($module);';
 	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, $args->{module} ];
     }
@@ -594,6 +595,8 @@ Spawns a new component session and waits for requests. Takes the following optio
   'debug', see lots of text on your console;
   'idle', adjust the job idle time ( default: 600 seconds ), before jobs get killed;
   'timeout', adjust the total job runtime ( default: 3600 seconds ), before a job is killed;
+  'perl', which perl executable to use as a default, instead of S^X;
+  'appdata', default path where CPANPLUS should look for it's .cpanplus folder;
 
 Returns a POE::Component::CPAN::YACSmoke object.
 
