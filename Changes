@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.10	Mon Jan  7 08:25:17 GMT 2008
+	- Added pause_queue() and resume_queue() methods;
+
 1.09	Tue Nov 13 07:32:15 GMT 2007
 	- Added 'perl' and 'appdata' defaults to spawn();
 	- Removed minismoker.pl from examples/;

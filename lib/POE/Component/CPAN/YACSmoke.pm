@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.09';
+$VERSION = '1.10';
 
 my $GOT_KILLFAM;
 
@@ -74,6 +74,17 @@ sub current_log {
   return unless $self->{_wheel_log};
   my $item = Storable::dclone( $self->{_wheel_log} );
   return $item;
+}
+
+sub pause_queue {
+  my $self = shift;
+  $self->{paused} = 1;
+}
+
+sub resume_queue {
+  my $self = shift;
+  my $pause = delete $self->{paused};
+  $poe_kernel->post( $self->{session_id}, '_spawn_wheel' ) if $pause;
 }
 
 sub shutdown {
@@ -273,6 +284,7 @@ sub _spawn_wheel {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
   return if $self->{wheel};
   return if $self->{_shutdown};
+  return if $self->{paused};
   my $job = shift @{ $self->{job_queue} };
   return unless $job;
   if ( $job->{appdata} ) {
@@ -626,6 +638,14 @@ Returns an arrayref of log output from the currently executing smoke job. Return
 =item shutdown
 
 Terminates the component. Any pending jobs are cancelled and the currently running job is allowed to complete gracefully. Requires no additional parameters.
+
+=item pause_queue
+
+Pauses processing of the jobs. The current job will finish processing, but any pending jobs will not be processed until the queue is resumed. This does not affect the continued submission of jobs to the queue.
+
+=item resume_queue
+
+Resumes the processing of the pending jobs queue if it has been previously paused.
 
 =back
 
