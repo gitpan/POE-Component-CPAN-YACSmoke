@@ -1,6 +1,10 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.12	Thu Jan 10 14:42:56 GMT 2008
+	- Added paused() method to indicate if the queue is paused or not;
+	- Switched to stable/development even/odd numbering;
+
 1.10	Mon Jan  7 08:25:17 GMT 2008
 	- Added pause_queue() and resume_queue() methods;
 

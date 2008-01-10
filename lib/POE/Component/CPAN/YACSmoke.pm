@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.10';
+$VERSION = '1.12';
 
 my $GOT_KILLFAM;
 
@@ -85,6 +85,10 @@ sub resume_queue {
   my $self = shift;
   my $pause = delete $self->{paused};
   $poe_kernel->post( $self->{session_id}, '_spawn_wheel' ) if $pause;
+}
+
+sub paused {
+  return $_[0]->{paused};
 }
 
 sub shutdown {
@@ -646,6 +650,10 @@ Pauses processing of the jobs. The current job will finish processing, but any p
 =item resume_queue
 
 Resumes the processing of the pending jobs queue if it has been previously paused.
+
+=item paused
+
+Returns a true value if the job queue is paused or a false value otherwise.
 
 =back
 
