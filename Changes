@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.14	Sun Jan 20 12:38:32 GMT 2008
+	- Added 'idle_kill' and 'excess_kill' indicators.
+
 1.12	Thu Jan 10 14:42:56 GMT 2008
 	- Added paused() method to indicate if the queue is paused or not;
 	- Switched to stable/development even/odd numbering;

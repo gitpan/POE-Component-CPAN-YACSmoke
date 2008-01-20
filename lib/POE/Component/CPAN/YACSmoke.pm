@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.12';
+$VERSION = '1.14';
 
 my $GOT_KILLFAM;
 
@@ -358,10 +358,12 @@ sub _wheel_idle {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
   my $now = time();
   if ( $now - $self->{_wheel_time} >= $self->{idle} ) {
+    $self->{_current_job}->{idle_kill} = 1;
     $kernel->yield( '_wheel_kill', 'Killing current run due to excessive idle' );
     return;
   }
   if ( $now - $self->{_current_job}->{start_time} >= $self->{timeout} ) {
+    $self->{_current_job}->{excess_kill} = 1;
     $kernel->yield( '_wheel_kill', 'Killing current run due to excessive run-time' );
     return;
   }
@@ -768,6 +770,8 @@ Resultant events will have a hashref as ARG0. All the keys passed in as part of 
   'submitted', the time in epoch seconds when the job was submitted;
   'start_time', the time in epoch seconds when the job started running;
   'end_time', the time in epoch seconds when the job finished;
+  'idle_kill', only present if the job was killed because of excessive idle;
+  'excess_kill', only present if the job was killed due to excessive runtime;
 
 The results of a 'recent' request will be same as above apart from an additional key:
 
