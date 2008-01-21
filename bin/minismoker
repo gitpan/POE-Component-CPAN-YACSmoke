@@ -88,10 +88,22 @@ sub _stop {
   my $heap = $_[HEAP];
   my $finish = time();
   my $cumulative = $finish - $heap->{_start_time};
+  my @stats = $smoker->statistics;
+  eval {
+	require Time::Duration;
+  };
+  unless ($@) {
+	$cumulative = Time::Duration::duration_exact( $cumulative );
+	$stats[$_] = Time::Duration::duration_exact( $stats[$_] ) for 2 .. 4;
+  }
   $poe_kernel->call( 'smoker', 'shutdown' );
   print STDOUT "$0 started at: \t", scalar localtime($heap->{_start_time}), "\n";
   print STDOUT "$0 finished at: \t", scalar localtime($finish), "\n";
   print STDOUT "$0 ran for: \t", $cumulative, "\n";
+  print STDOUT "$0 tot jobs:\t", $stats[1], "\n";
+  print STDOUT "$0 avg run: \t", $stats[2], "\n";
+  print STDOUT "$0 min run: \t", $stats[3], "\n";
+  print STDOUT "$0 max run: \t", $stats[4], "\n";
   undef;
 }
 

@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.18	Mon Jan 21 11:29:50 GMT 2008
+	- Updated minismoker to report statistics on exit
+
 1.16	Mon Jan 21 10:44:01 GMT 2008
 	- Added statistics 
 

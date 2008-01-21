@@ -19,4 +19,4 @@ requires:
   File::Spec: 0
   POE: 0.38
   Storable: 0
-version: 1.16
+version: 1.18
