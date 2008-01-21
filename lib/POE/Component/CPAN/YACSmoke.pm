@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.14';
+$VERSION = '1.16';
 
 my $GOT_KILLFAM;
 
@@ -91,6 +91,14 @@ sub paused {
   return $_[0]->{paused};
 }
 
+sub statistics {
+  my $self = shift;
+  my @stats;
+  push @stats, $self->{stats}->{$_} for qw(started totaljobs avg_run min_run max_run);
+  return @stats if wantarray;
+  return \@stats;
+}
+
 sub shutdown {
   my $self = shift;
   $poe_kernel->post( $self->{session_id}, 'shutdown' );
@@ -107,6 +115,14 @@ sub _start {
   $self->{job_queue} = [ ];
   $self->{idle} = 600 unless $self->{idle};
   $self->{timeout} = 3600 unless $self->{timeout};
+  $self->{stats} = {
+	started => time(),
+	totaljobs => 0,
+	avg_run => 0,
+	min_run => 0,
+	max_run => 0,
+	_sum => 0,
+  };
   $ENV{APPDATA} = $self->{appdata} if $self->{appdata};
   undef;
 }
@@ -276,6 +292,14 @@ sub _sig_child {
     delete $job->{program}; 
     delete $job->{program_args};
   }
+  # Stats
+  my $run_time = $job->{end_time} - $job->{start_time};
+  $self->{stats}->{max_run} = $run_time if $run_time > $self->{stats}->{max_run};
+  $self->{stats}->{min_run} = $run_time if $self->{stats}->{min_run} == 0;
+  $self->{stats}->{min_run} = $run_time if $run_time < $self->{stats}->{min_run};
+  $self->{stats}->{_sum} += $run_time;
+  $self->{stats}->{totaljobs}++;
+  $self->{stats}->{avg_run} = $self->{stats}->{_sum} / $self->{stats}->{totaljobs};
   $self->{debug} = delete $job->{global_debug};
   $ENV{APPDATA} = delete $job->{backup_env} if $job->{appdata};
   $kernel->post( $job->{session}, $job->{event}, $job );
@@ -657,6 +681,19 @@ Resumes the processing of the pending jobs queue if it has been previously pause
 
 Returns a true value if the job queue is paused or a false value otherwise.
 
+=item statistics
+
+Returns some statistical that the component gathers. In a list context returns a list of data. In a scalar
+context returns an arrayref of the said data.
+
+The data is returned in the following order:
+
+  The time in epoch seconds when the smoker was started;
+  The total number of jobs that have been processed;
+  The current average job run time;
+  The minimum job run time observed;
+  The maximum job run time observed;
+  
 =back
 
 =head1 INPUT EVENTS
