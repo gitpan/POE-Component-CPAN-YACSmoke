@@ -5,7 +5,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.18';
+$VERSION = '1.20';
 
 my $GOT_KILLFAM;
 
@@ -46,7 +46,7 @@ sub spawn {
 		      flush	=> '_command',
 		      'package' => '_command',
 	   },
-	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _wheel_kill _sig_child) ],
+	   $self => [ qw(_start _spawn_wheel _wheel_error _wheel_closed _wheel_stdout _wheel_stderr _wheel_idle _wheel_kill _sig_child _sig_hup) ],
 	],
 	heap => $self,
 	( ref($options) eq 'HASH' ? ( options => $options ) : () ),
@@ -106,6 +106,7 @@ sub shutdown {
 
 sub _start {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
+  $kernel->sig( 'HUP', '_sig_hup' );
   $self->{session_id} = $_[SESSION]->ID();
   if ( $self->{alias} ) {
 	$kernel->alias_set( $self->{alias} );
@@ -127,8 +128,13 @@ sub _start {
   undef;
 }
 
+sub _sig_hup {
+  $poe_kernel->sig_handled();
+}
+
 sub _shutdown {
   my ($kernel,$self) = @_[KERNEL,OBJECT];
+  $kernel->sig( 'HUP' );
   $kernel->alias_remove( $_ ) for $kernel->alias_list();
   $kernel->refcount_decrement( $self->{session_id} => __PACKAGE__ ) unless $self->{alias};
   $kernel->refcount_decrement( $_->{session}, __PACKAGE__ ) for @{ $self->{job_queue} };
