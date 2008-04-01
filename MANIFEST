@@ -5,6 +5,7 @@ examples/flush.pl
 examples/package_search.pl
 examples/recent_modules.pl
 inc/Module/Install.pm
+inc/Module/Install/AuthorTests.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
 inc/Module/Install/Fetch.pm
@@ -30,6 +31,6 @@ t/08_flush.t
 t/09_pause_resume.t
 t/10_statistics.t
 t/11_sighup.t
-t/99_pod.t
-t/99_pod_coverage.t
-t/99_test_kwalitee.t
+xt/99_pod.t
+xt/99_pod_coverage.t
+xt/99_test_kwalitee.t

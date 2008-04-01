@@ -1,3 +1,4 @@
+use strict;
 use inc::Module::Install;
 name 'POE-Component-CPAN-YACSmoke';
 author 'Chris Williams <chris@bingosnet.co.uk>';
@@ -7,6 +8,7 @@ abstract_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 build_requires 'Test::More' => 0.47;
 requires 'Storable' => 0;
 requires 'POE' => 0.38;
+requires 'POE::Wheel::Run' => 0;
 requires 'File::Spec' => 0;
 if ( $^O eq 'MSWin32' ) {
   requires 'Win32::Process' => 0;
@@ -16,5 +18,6 @@ else {
   my $value = prompt( 'Do you want to enable optional Proc::ProcessTable support [y/N]?', 'N' );
   requires 'Proc::ProcessTable' => 0 if $value =~ /^Y/i;
 }
+author_tests 'xt';
 install_script 'bin/minismoker';
 WriteAll();
