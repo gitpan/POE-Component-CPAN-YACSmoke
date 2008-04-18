@@ -6,7 +6,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.22';
+$VERSION = '1.24';
 
 my $GOT_KILLFAM;
 
@@ -238,12 +238,12 @@ sub _command {
     $args->{prioritise} = 0 unless $args->{prioritise};
     if ( $^O eq 'MSWin32' ) {
 	$args->{program} = \&_flush;
-	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
+	$args->{program_args} = [ $args->{perl} || $self->{perl} || $^X, ( $args->{type} and $args->{type} eq 'all' ? 'all' : 'old' ) ];
     }
     else {
 	my $perl = $args->{perl} || $self->{perl} || $^X;
 	my $code = 'my $type = shift; my $smoke = CPAN::YACSmoke->new(); $smoke->flush($type) if $smoke->can("flush");';
-	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, ( $args->{type} eq 'all' ? 'all' : 'old' ) ];
+	$args->{program} = [ $perl, '-MCPAN::YACSmoke', '-e', $code, ( $args->{type} and $args->{type} eq 'all' ? 'all' : 'old' ) ];
     }
   }
   else {
@@ -414,7 +414,10 @@ sub _wheel_kill {
 	unless Win32::Process::KillProcess( $grp_pid, 0 );
   }
   else {
-    if ( $GOT_KILLFAM ) {
+    if ( $self->{grp_kill} ) {
+      $self->{wheel}->kill(-9) if $self->{wheel};
+    }
+    elsif ( $GOT_KILLFAM ) {
       _kill_family( 9, $self->{wheel}->PID() ) if $self->{wheel};
     }
     else {
@@ -647,6 +650,7 @@ Spawns a new component session and waits for requests. Takes the following optio
   'timeout', adjust the total job runtime ( default: 3600 seconds ), before a job is killed;
   'perl', which perl executable to use as a default, instead of S^X;
   'appdata', default path where CPANPLUS should look for it's .cpanplus folder;
+  'grp_kill', enable process group kill, requires a higher version of POE than 1.0000;
 
 Returns a POE::Component::CPAN::YACSmoke object.
 

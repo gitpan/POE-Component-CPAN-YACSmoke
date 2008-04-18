@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.24	Fri Apr 18 15:46:20 BST 2008
+	- Added new grp_kill option.
+
 1.22	Tue Apr  1 11:14:41 BST 2008
 	- Kwalitee fixes. Moved author tests to xt/
 
