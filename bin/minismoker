@@ -5,10 +5,10 @@ use Getopt::Long;
 
 $|=1;
 
-my ($perl, $jobs, $appdata, $indices, $version, $reverse, $package, $author, $grpkill);
+my ($perl, $jobs, $appdata, $indices, $version, $reverse, $package, $author, $nogrpkill);
 my $debug = 0;
 
-GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices, 'version' => \$version, 'reverse' => \$reverse, 'author=s' => \$author, 'package=s' => \$package, 'grpkill' => \$grpkill );
+GetOptions( 'perl=s' => \$perl, 'jobs=s' => \$jobs, 'debug' => \$debug, 'appdata' => \$appdata, 'indices' => \$indices, 'version' => \$version, 'reverse' => \$reverse, 'author=s' => \$author, 'package=s' => \$package, 'nogrpkill' => \$nogrpkill );
 
 if ( $version ) {
   print "$0 - version ", $POE::Component::CPAN::YACSmoke::VERSION, "\n";
@@ -27,7 +27,7 @@ if ( $jobs ) {
   close($fh);
 }
 
-my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker', debug => $debug, options => { trace => 0 }, perl => $perl, grp_kill => $grpkill );
+my $smoker = POE::Component::CPAN::YACSmoke->spawn( alias => 'smoker', debug => $debug, options => { trace => 0 }, perl => $perl, no_grp_kill => $nogrpkill );
 
 POE::Session->create(
 	package_states => [

@@ -5,9 +5,12 @@ author 'Chris Williams <chris@bingosnet.co.uk>';
 license 'perl';
 version_from 'lib/POE/Component/CPAN/YACSmoke.pm';
 abstract_from 'lib/POE/Component/CPAN/YACSmoke.pm';
+perl_version '5.000';
+author_tests 'xt';
+install_script 'bin/minismoker';
 build_requires 'Test::More' => 0.47;
 requires 'Storable' => 0;
-requires 'POE' => 0.38;
+requires 'POE' => 1.0001;
 requires 'POE::Wheel::Run' => 0;
 requires 'File::Spec' => 0;
 if ( $^O eq 'MSWin32' ) {
@@ -18,6 +21,4 @@ else {
   my $value = prompt( 'Do you want to enable optional Proc::ProcessTable support [y/N]?', 'N' );
   requires 'Proc::ProcessTable' => 0 if $value =~ /^Y/i;
 }
-author_tests 'xt';
-install_script 'bin/minismoker';
 WriteAll();

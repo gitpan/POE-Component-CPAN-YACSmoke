@@ -6,7 +6,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.24';
+$VERSION = '1.26';
 
 my $GOT_KILLFAM;
 
@@ -414,7 +414,7 @@ sub _wheel_kill {
 	unless Win32::Process::KillProcess( $grp_pid, 0 );
   }
   else {
-    if ( $self->{grp_kill} ) {
+    if ( !$self->{no_grp_kill} ) {
       $self->{wheel}->kill(-9) if $self->{wheel};
     }
     elsif ( $GOT_KILLFAM ) {
@@ -650,7 +650,7 @@ Spawns a new component session and waits for requests. Takes the following optio
   'timeout', adjust the total job runtime ( default: 3600 seconds ), before a job is killed;
   'perl', which perl executable to use as a default, instead of S^X;
   'appdata', default path where CPANPLUS should look for it's .cpanplus folder;
-  'grp_kill', enable process group kill, requires a higher version of POE than 1.0000;
+  'no_grp_kill', set to a true value to disable process group kill;
 
 Returns a POE::Component::CPAN::YACSmoke object.
 
@@ -840,6 +840,12 @@ The code is still experimental though. Be warned.
 =head1 AUTHOR
 
 Chris 'BinGOs' Williams <chris@bingosnet.co.uk>
+
+=head1 LICENSE
+
+Copyright C<(c)> Chris Williams and Jonathan Steinert
+
+This module may be used, modified, and distributed under the same terms as Perl itself. Please see the license that came with your Perl distribution for details.
 
 =head1 KUDOS
 

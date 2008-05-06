@@ -1,6 +1,11 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.26	Tue May  6 15:34:26 BST 2008
+	- Updated POE dependency to 1.0001
+	- Changed grp_kill to no_grp_kill
+	- Added LICENSE information
+
 1.24	Fri Apr 18 15:46:20 BST 2008
 	- Added new grp_kill option.
 
