@@ -1,5 +1,6 @@
 #!perl
 use strict;
+BEGIN { eval "use Event;"; }
 use POE qw(Component::CPAN::YACSmoke);
 use Getopt::Long;
 

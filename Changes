@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.28	Fri May 30 22:57:32 BST 2008
+	- Added check for Event module to minismoker
+
 1.26	Tue May  6 15:34:26 BST 2008
 	- Updated POE dependency to 1.0001
 	- Changed grp_kill to no_grp_kill
