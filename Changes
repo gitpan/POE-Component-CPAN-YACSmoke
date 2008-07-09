@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.30	Wed Jul  9 07:31:35 BST 2008
+	- Added better %ENV handling for when specifying APPDATA.
+
 1.28	Fri May 30 22:57:32 BST 2008
 	- Added check for Event module to minismoker
 

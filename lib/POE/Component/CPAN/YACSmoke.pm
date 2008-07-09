@@ -6,7 +6,7 @@ use POE qw(Wheel::Run);
 use Storable;
 use vars qw($VERSION);
 
-$VERSION = '1.28';
+$VERSION = '1.30';
 
 my $GOT_KILLFAM;
 
@@ -309,7 +309,7 @@ sub _sig_child {
   $self->{stats}->{totaljobs}++;
   $self->{stats}->{avg_run} = $self->{stats}->{_sum} / $self->{stats}->{totaljobs};
   $self->{debug} = delete $job->{global_debug};
-  $ENV{APPDATA} = delete $job->{backup_env} if $job->{appdata};
+  #$ENV{APPDATA} = delete $job->{backup_env} if $job->{appdata};
   $kernel->post( $job->{session}, $job->{event}, $job );
   $kernel->refcount_decrement( $job->{session}, __PACKAGE__ );
   $kernel->yield( '_spawn_wheel' );
@@ -323,8 +323,9 @@ sub _spawn_wheel {
   return if $self->{paused};
   my $job = shift @{ $self->{job_queue} };
   return unless $job;
+  my $backup_env;
   if ( $job->{appdata} ) {
-    $job->{backup_env} = $ENV{APPDATA};
+    $backup_env = $ENV{APPDATA};
     $ENV{APPDATA} = $job->{appdata};
   }
   $self->{wheel} = POE::Wheel::Run->new(
@@ -335,6 +336,10 @@ sub _spawn_wheel {
     ErrorEvent  => '_wheel_error',
     CloseEvent  => '_wheel_close',
   );
+  if ( $job->{appdata} ) {
+    delete $ENV{APPDATA};
+    $ENV{APPDATA} = $backup_env if $backup_env;
+  }
   unless ( $self->{wheel} ) {
 	warn "Couldn\'t spawn a wheel for $job->{module}\n";
 	$kernel->refcount_decrement( $job->{session}, __PACKAGE__ );
