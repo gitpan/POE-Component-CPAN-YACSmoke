@@ -1,6 +1,9 @@
 POE::Component::CPAN::YACSmoke
 ==============================
 
+1.34	Mon Aug  4 10:29:32 BST 2008
+	- Forgot to add a 'use' line to minismoker
+
 1.32	Mon Aug  4 10:14:44 BST 2008
 	- Added --logdir option to minismoker
 

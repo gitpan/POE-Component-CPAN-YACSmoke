@@ -1,7 +1,8 @@
 #!perl
 use strict;
 BEGIN { eval "use Event;"; }
-use POE qw(Component::CPAN::YACSmoke);
+use File::Spec;
+use POE qw(Component::CPAN::YACSmoke Wheel::ReadWrite);
 use Getopt::Long;
 
 $|=1;
